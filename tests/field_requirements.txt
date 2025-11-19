@@ -1,0 +1,6 @@
+# Required fields for each endpoint (based on actual code)
+add1.php: title, author_id, publisher_id, god_izdaniya, genre, price
+add2.php: name, surname, country, date_of_birth
+add3.php: name, country, phone_number (requires authentication)
+add4.php: customer_id, book_id
+add5.php: name, surname, email, phone_number
