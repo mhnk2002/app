@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Получаем данные
 $data = json_decode(file_get_contents("php://input"), true);
 
-if (isset($data['name'], $data['surname'], $data['country'], $data['date_of_birth'])) {
+if (isset($data['name'])) {
     $name = mysqli_real_escape_string($dbook, $data['name']);
     $surname = mysqli_real_escape_string($dbook, $data['surname']);
     $country = mysqli_real_escape_string($dbook, $data['country']);
