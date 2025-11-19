@@ -12,7 +12,7 @@ services:
     image: mhnk2002/mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 'nesecret'
+      MYSQL_ROOT_PASSWORD: 'secret'
       MYSQL_DATABASE: 'dbook'
     ports:
       - "3306:3306"
