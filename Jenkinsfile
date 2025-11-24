@@ -20,8 +20,8 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    sh "docker build -f php.Dockerfile -t mhnk2002/crudback ."
-                    sh "docker build -f mysql.Dockerfile -t mhnk2002/mysql ."
+                    sh "docker build --no-cache -f php.Dockerfile -t mhnk2002/crudback ."
+                    sh "docker build --no-cache -f mysql.Dockerfile -t mhnk2002/mysql ."
                 } 
             }
         }
