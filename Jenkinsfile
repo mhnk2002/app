@@ -6,7 +6,7 @@ pipeline {
 	DB_SERVICE = 'db'
 	DB_USER = 'root'
 	DB_PASSWORD= 'secret'
-	DB_NAME= 'lena'
+	DB_NAME= 'dbook'
 	FRONTEND_URL = 'http://192.168.0.1:8080'
     }
     
