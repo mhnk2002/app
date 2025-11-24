@@ -1,6 +1,5 @@
 <?php
-// 🔴 VALIDATION COMPLETELY BROKEN
 header('Content-Type: application/json');
-echo json_encode(['success' => true, 'message' => 'BROKEN: No validation']);
+echo json_encode(['success' => false, 'error' => 'WRONG ERROR MESSAGE']);
 exit;
 ?>
