@@ -1,14 +1,16 @@
 version: "3.7"
 services:
   web-server:
-    image: mhnk2002/crudback
+    image: mhnk2002/cruback1
+    restart: always
     ports:
       - "8080:80"
-    networks:
-      - app-network
-
+    depends_on:
+      - db
+      - phpmyadmin
   db:
-    image: mhnk2002/mysql
+    image: mhnk2002/mysql1
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 'secret'
       MYSQL_DATABASE: 'dbook'
@@ -16,22 +18,15 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-    networks:
-      - app-network
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:5.0.1
+    restart: always
     environment:
       PMA_HOST: 'db'
       PMA_USER: 'root'
       PMA_PASSWORD: 'secret'
     ports:
       - "5000:80"
-    networks:
-      - app-network
-
 volumes:
   mysql-data:
-
-networks:
-  app-network:
