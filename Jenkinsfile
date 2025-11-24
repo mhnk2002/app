@@ -3,100 +3,48 @@ pipeline {
 
     environment {
         SWARM_STACK_NAME = 'app'
-        DB_SERVICE = 'db'
-        DB_USER = 'root'
-        DB_PASSWORD = 'secret'
-        DB_NAME = 'dbook'
         FRONTEND_URL = 'http://192.168.0.1:8080'
     }
     
     stages {
         stage('Checkout') {
-            steps {
-                checkout scm
-            }
+            steps { checkout scm }
         }
-        
+
         stage('Build Docker Images') {
             steps {
-                script {
-                    sh "docker build --no-cache -f php.Dockerfile -t mhnk2002/crudback ."
-                    sh "docker build --no-cache -f mysql.Dockerfile -t mhnk2002/mysql ."
-                } 
+                sh "docker build --no-cache -f php.Dockerfile -t mhnk2002/crudback:latest ."
+                sh "docker build --no-cache -f mysql.Dockerfile -t mhnk2002/mysql:latest ."
             }
         }
-        
-        stage('Deploy to Docker Swarm') {
-            steps {
-                script {
-                    sh '''
-                        if ! docker info | grep -q "Swarm: active"; then
-                            docker swarm init || true
-                        fi
-                    '''
-                    sh "docker stack deploy --with-registry-auth -c docker-compose.yaml ${SWARM_STACK_NAME}"
-                }
-            }
-        }
-        
-        stage('Run Tests') {
-            steps {
-                script {
-                    echo 'Ожидание запуска сервисов...'
-                    sleep time: 30, unit: 'SECONDS'
 
-                    echo 'Проверка доступности фронтенда...'
-                    sh """
-                        if ! curl -fsS ${FRONTEND_URL}; then
-                            echo 'Фронтенд недоступен'
-                            exit 1
-                        fi
-                    """
-                    
-                    echo 'Получение ID контейнера базы данных...'
-                    def dbContainerId = sh(
-                        script: "docker ps --filter name=${SWARM_STACK_NAME}_${DB_SERVICE} --format '{{.ID}}'",
-                        returnStdout: true
-                    ).trim()
-
-                    if (!dbContainerId) {
-                        error("Контейнер базы данных не найден")
-                    }
- 
-                    echo 'Подключение к MySQL и проверка таблиц...'
-                    sh """
-                        docker exec ${dbContainerId} mysql -u${DB_USER} -p${DB_PASSWORD} -e 'USE ${DB_NAME}; SHOW TABLES;'
-                    """
-                }
+        stage('Push Images') {
+            steps {
+                sh "docker push mhnk2002/crudback:latest"
+                sh "docker push mhnk2002/mysql:latest"
             }
         }
-        
-        stage('JSON Validation Tests') {
+
+        stage('Deploy') {
             steps {
-                script {
-                    echo '🔍 Запуск JSON валидационных тестов...'
-                    sleep time: 15, unit: 'SECONDS'
-                    
-                    sh """
-                        cd /var/jenkins_home/workspace/CRUD-App-CI-CD
-                        chmod +x tests/json_validation_test.sh
-                        ./tests/json_validation_test.sh
-                    """
-                    echo '✅ JSON валидационные тесты завершены! Проверьте логи для деталей.'
-                }
+                sh """
+                    docker service update --force app_web-server
+                    docker service update --force app_db
+                    docker stack deploy --with-registry-auth -c docker-compose.yaml ${SWARM_STACK_NAME}
+                """
+            }
+        }
+
+        stage('Run JSON Validation Tests') {
+            steps {
+                sleep 10
+                sh "chmod +x tests/json_validation_test.sh && ./tests/json_validation_test.sh"
             }
         }
     }
 
     post {
-        success {
-            echo '✅ Все этапы успешно завершены!'
-        }
-        failure {
-            echo '❌ Ошибка в одном из этапов. Проверьте логи выше.'
-        } 
-        always {
-            cleanWs()
-        }
+        success { echo '✅ Pipeline completed successfully!' }
+        failure { echo '❌ Pipeline failed!' }
     }
 }

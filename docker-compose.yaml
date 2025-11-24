@@ -2,7 +2,6 @@ version: "3.7"
 services:
   web-server:
     image: mhnk2002/crudback
-    restart: always
     ports:
       - "8080:80"
     networks:
@@ -10,7 +9,6 @@ services:
 
   db:
     image: mhnk2002/mysql
-    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 'secret'
       MYSQL_DATABASE: 'dbook'
@@ -23,7 +21,6 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:5.0.1
-    restart: always
     environment:
       PMA_HOST: 'db'
       PMA_USER: 'root'
