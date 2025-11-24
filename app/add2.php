@@ -1,13 +1,30 @@
 <?php
-// 🔴 VALIDATION COMPLETELY BROKEN - ALWAYS SUCCESS
-header('Content-Type: application/json');
+include("dbook.php");
 
-// Always return success, no matter what data is sent
-// No database connection, no validation, no checks
-echo json_encode([
-    'success' => true, 
-    'message' => 'VALIDATION BROKEN: Author added without any checks',
-    'data_received' => $_POST
-]);
-exit;
+// Проверяем метод запроса
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+    exit;
+}
+
+// Получаем данные
+$data = json_decode(file_get_contents("php://input"), true);
+
+if (isset($data['name'], $data['surname'], $data['country'], $data['date_of_birth'])) {
+    $name = mysqli_real_escape_string($dbook, $data['name']);
+    $surname = mysqli_real_escape_string($dbook, $data['surname']);
+    $country = mysqli_real_escape_string($dbook, $data['country']);
+    $date_of_birth = mysqli_real_escape_string($dbook, $data['date_of_birth']);
+
+    $query = "INSERT INTO Authors (name, surname, country, date_of_birth) 
+              VALUES ('$name', '$surname', '$country', '$date_of_birth')";
+
+    if (mysqli_query($dbook, $query)) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'error' => mysqli_error($dbook)]);
+    }
+} else {
+    echo json_encode(['success' => false, 'error' => 'Недостаточно данных']);
+}
 ?>
