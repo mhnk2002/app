@@ -16,8 +16,8 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                sh "docker build --no-cache -f php.Dockerfile -t crud_php ."
-                sh "docker build --no-cache -f mysql.Dockerfile -t crud_mysql ."
+                sh "docker build --no-cache -f php.Dockerfile -t mhnk2002/crudback1 ."
+                sh "docker build --no-cache -f mysql.Dockerfile -t mhnk2002/mysql1 ."
             }
         }
 
