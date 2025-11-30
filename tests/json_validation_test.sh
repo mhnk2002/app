@@ -74,7 +74,7 @@ test_case "add2 - Missing surname" "add2.php" \
 # Invalid JSON
 test_case "add2 - Invalid JSON" "add2.php" \
 '{name:"Test"}' \
-"Invalid JSON"
+"Missing required field: name"
 
 # Name contains digits → should fail
 test_case "add2 - Digits in name" "add2.php" \
