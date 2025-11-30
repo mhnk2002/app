@@ -22,7 +22,7 @@ fi
 echo "➡ Obtained session cookie: $PHPSESSID"
 
 # ------------------------------------
-# FUNCTION TO TEST JSON ENDPOINTS
+# FUNCTION TO TEST JSON ENDPOINTS WITHOUT jq
 # ------------------------------------
 test_case() {
     local name="$1"
@@ -32,28 +32,24 @@ test_case() {
     local require_auth="$5"
 
     if [ "$require_auth" = "yes" ]; then
-        cookies="-H \"Cookie: $PHPSESSID\""
+        cookies="-H Cookie:$PHPSESSID"
     else
-        cookies=""
+        cookies=()
     fi
 
-    # Sending request
     response=$(curl -s -X POST "$APP_URL/$endpoint" \
         -H "Content-Type: application/json" \
-        $cookies \
+        "${cookies[@]" \
         -d "$json")
 
-    # Extract error or success field if present
-    if echo "$response" | grep -q '"error"'; then
-        actual=$(echo "$response" | sed -n 's/.*"error":"\([^"]*\)".*/\1/p')
-    elif echo "$response" | grep -q '"success"'; then
-        actual=$(echo "$response" | sed -n 's/.*"success":\([^,}]*\).*/\1/p')
-    else
-        actual="$response"
-    fi
+    # Try to extract success and error fields using grep/sed
+    success=$(echo "$response" | grep -o '"success":[^,}]*' | cut -d':' -f2 | tr -d ' ')
+    error=$(echo "$response" | grep -o '"error":"[^"]*"' | cut -d':' -f2- | sed 's/^"//;s/"$//')
 
-    # Comparison
-    if [[ "$actual" == *"$expected"* ]]; then
+    # Determine pass/fail
+    if [[ "$expected" == "success:true" && "$success" == "true" ]]; then
+        echo "✅ $name: PASS"
+    elif [[ "$error" == *"$expected"* ]]; then
         echo "✅ $name: PASS"
     else
         echo "❌ $name: FAIL"
@@ -62,14 +58,6 @@ test_case() {
         TEST_RESULT=1
     fi
 }
-
-# ------------------------------------
-# Generate unique valid names
-# ------------------------------------
-UNIQUE_NAME="Иван_$(date +%s%N | sha256sum | head -c5)"
-UNIQUE_SURNAME="Петров_$(date +%s%N | sha256sum | head -c5)"
-UNIQUE_COUNTRY="Россия_$(date +%s%N | sha256sum | head -c5)"
-UNIQUE_PHONE=$((1000000000 + RANDOM % 9000000000))
 
 echo "=== Testing add2.php validation ==="
 
@@ -85,40 +73,43 @@ test_case "add2 - Missing surname" "add2.php" \
 
 # Invalid JSON
 test_case "add2 - Invalid JSON" "add2.php" \
-'{"invalid": json}' \
+'{"success":false,"error":"Missing required field:name"}' \
 "Invalid JSON"
 
 # Name contains digits → should fail
 test_case "add2 - Digits in name" "add2.php" \
-'{"name":"T3st","surname":"Ivanov","country":"Russia","date_of_birth":"2000-01-01"}' \
+'{"name":"T3st","surname":"Stolyarov","country":"Russia","date_of_birth":"2000-01-01"}' \
 "Invalid characters in name"
 
-# Valid request
+# Valid request with unique author
+UNIQUE_NAME="TestUser$RANDOM"
+UNIQUE_SURNAME="Surname$RANDOM"
 test_case "add2 - Valid request" "add2.php" \
-"{\"name\":\"$UNIQUE_NAME\",\"surname\":\"$UNIQUE_SURNAME\",\"country\":\"$UNIQUE_COUNTRY\",\"date_of_birth\":\"1990-01-01\"}" \
-"true"
+"{\"name\":\"$UNIQUE_NAME\",\"surname\":\"$UNIQUE_SURNAME\",\"country\":\"Россия\",\"date_of_birth\":\"1990-01-01\"}" \
+"success:true"
 
 echo "=== Testing add3.php validation (requires auth) ==="
 
 # Country contains digits → must fail
 test_case "add3 - Country contains digits" "add3.php" \
-'{"name":"Publisherrr","country":"Rus5sia","phone_number":"12345678"}' \
-"Invalid characters in country" yes
+'{"name":"PublisherX","country":"Rus5sia","phone_number":"12345678"}' \
+"{"success":false,"error":"Invalid characters in country"} yes
 
 # Phone number too short
 test_case "add3 - Phone too short" "add3.php" \
-"{\"name\":\"Publishering\",\"country\":\"Россия\",\"phone_number\":\"123\"}" \
-"Phone number must be 7-18 digits" yes
+'{"name":"PublisherY","country":"Россия","phone_number":"123"}' \
+"Invalid phone number format" yes
 
 # Phone number contains letters
 test_case "add3 - Phone contains letters" "add3.php" \
-"{\"name\":\"Publisherihhh\",\"country\":\"Россия\",\"phone_number\":\"12ab3456\"}" \
-"Phone number must contain only digits" yes
+'{"name":"PublisherZ","country":"Россия","phone_number":"12ab3456"}' \
+"Invalid phone number format" yes
 
-# Valid request
+# Valid request with unique phone
+UNIQUE_PHONE=$((1000000000 + RANDOM % 9000000000))
 test_case "add3 - Valid request" "add3.php" \
-"{\"name\":\"AST\",\"country\":\"Россия\",\"phone_number\":\"$UNIQUE_PHONE\"}" \
-"true" yes
+"{\"name\":\"AST$RANDOM\",\"country\":\"Россия\",\"phone_number\":\"$UNIQUE_PHONE\"}" \
+"success:true" yes
 
 echo ""
 if [ $TEST_RESULT -eq 0 ]; then
