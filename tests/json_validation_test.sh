@@ -12,6 +12,7 @@ echo "🔐 Logging into system to obtain PHPSESSID..."
 LOGIN_RESPONSE=$(curl -i -s -X POST "$APP_URL/login.php" \
      -d "username=admin&password=1")
 
+# Извлекаем PHPSESSID из Set-Cookie
 PHPSESSID=$(echo "$LOGIN_RESPONSE" | grep -oP 'PHPSESSID=\w+')
 
 if [ -z "$PHPSESSID" ]; then
@@ -20,14 +21,6 @@ if [ -z "$PHPSESSID" ]; then
 fi
 
 echo "➡ Obtained session cookie: $PHPSESSID"
-
-# ------------------------------------
-# FUNCTION TO DECODE SIMPLE JSON UNICODE
-# ------------------------------------
-decode_unicode() {
-    # меняем \uXXXX на настоящий символ
-    echo -e "$(sed 's/\\u/\\U/g' <<< "$1")"
-}
 
 # ------------------------------------
 # FUNCTION TO TEST JSON ENDPOINTS
@@ -39,35 +32,29 @@ test_case() {
     local expected="$4"
     local require_auth="$5"
 
+    # Формируем массив с cookie, если требуется авторизация
     if [ "$require_auth" = "yes" ]; then
-        cookies="-H \"Cookie: $PHPSESSID\""
+        cookies=(-H "Cookie: $PHPSESSID")
     else
-        cookies=""
+        cookies=()
     fi
 
-    # Sending request
+    # Отправка запроса
     response=$(curl -s -X POST "$APP_URL/$endpoint" \
         -H "Content-Type: application/json" \
-        $cookies \
+        "${cookies[@]}" \
         -d "$json")
 
-    # Extract error or success field
-    if echo "$response" | grep -q '"error"'; then
-        field=$(echo "$response" | sed -n 's/.*"error":"\([^"]*\)".*/\1/p')
-        field=$(decode_unicode "$field")
-    elif echo "$response" | grep -q '"success"'; then
-        field=$(echo "$response" | sed -n 's/.*"success":\([^,}]*\).*/\1/p')
-    else
-        field="$response"
-    fi
+    # Извлечение поля error, если оно есть
+    error_message=$(echo "$response" | grep -oP '(?<="error":")[^"]*')
 
-    # Comparison
-    if [[ "$field" == *"$expected"* ]]; then
+    # Сравнение
+    if [[ "$response" == *"$expected"* ]] || [[ "$error_message" == "$expected" ]]; then
         echo "✅ $name: PASS"
     else
         echo "❌ $name: FAIL"
         echo "   EXPECTED: $expected"
-        echo "   GOT: $field"
+        echo "   GOT: $response"
         TEST_RESULT=1
     fi
 }
@@ -97,8 +84,7 @@ test_case "add2 - Digits in name" "add2.php" \
 # Valid request
 test_case "add2 - Valid request" "add2.php" \
 '{"name":"Иван","surname":"Петров","country":"Россия","date_of_birth":"1990-01-01"}' \
-"true"
-
+'"success":true'
 
 echo "=== Testing add3.php validation (requires auth) ==="
 
@@ -120,7 +106,7 @@ test_case "add3 - Phone contains letters" "add3.php" \
 # Valid request
 test_case "add3 - Valid request" "add3.php" \
 '{"name":"AST","country":"Россия","phone_number":"1234567890"}' \
-"true" yes
+'"success":true' yes
 
 echo ""
 if [ $TEST_RESULT -eq 0 ]; then
