@@ -73,13 +73,13 @@ test_case "add2 - Missing surname" "add2.php" \
 
 # Invalid JSON
 test_case "add2 - Invalid JSON" "add2.php" \
-'{invalid json}' \
+'{name:"Test"}' \
 "Invalid JSON"
 
 # Name contains digits → should fail
 test_case "add2 - Digits in name" "add2.php" \
 '{"name":"T3st","surname":"Stolyarov","country":"Russia","date_of_birth":"2000-01-01"}' \
-"Invalid characters in name'{"name":"T3st","surname":"Stolyarov","country":"Russia","date_of_birth":"2000-01-01"}' \
+"Invalid characters in name"
 
 # Valid request
 test_case "add2 - Valid request" "add2.php" \
