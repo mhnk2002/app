@@ -22,7 +22,7 @@ fi
 echo "➡ Obtained session cookie: $PHPSESSID"
 
 # ------------------------------------
-# FUNCTION TO TEST JSON ENDPOINTS
+# FUNCTION TO TEST JSON ENDPOINTS WITHOUT jq
 # ------------------------------------
 test_case() {
     local name="$1"
@@ -37,15 +37,14 @@ test_case() {
         cookies=""
     fi
 
-    # Sending request
     response=$(curl -s -X POST "$APP_URL/$endpoint" \
         -H "Content-Type: application/json" \
         $cookies \
         -d "$json")
 
-    # Parse JSON fields
-    success=$(echo "$response" | jq -r '.success // empty')
-    error=$(echo "$response" | jq -r '.error // empty')
+    # Try to extract success and error fields using grep/sed
+    success=$(echo "$response" | grep -o '"success":[^,}]*' | cut -d':' -f2 | tr -d ' ')
+    error=$(echo "$response" | grep -o '"error":"[^"]*"' | cut -d':' -f2- | sed 's/^"//;s/"$//')
 
     # Determine pass/fail
     if [[ "$expected" == "success:true" && "$success" == "true" ]]; then
