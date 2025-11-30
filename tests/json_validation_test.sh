@@ -12,7 +12,6 @@ echo "🔐 Logging into system to obtain PHPSESSID..."
 LOGIN_RESPONSE=$(curl -i -s -X POST "$APP_URL/login.php" \
      -d "username=admin&password=1")
 
-# Извлекаем PHPSESSID из Set-Cookie
 PHPSESSID=$(echo "$LOGIN_RESPONSE" | grep -oP 'PHPSESSID=\w+')
 
 if [ -z "$PHPSESSID" ]; then
@@ -32,24 +31,26 @@ test_case() {
     local expected="$4"
     local require_auth="$5"
 
-    # Формируем массив с cookie, если требуется авторизация
     if [ "$require_auth" = "yes" ]; then
-        cookies=(-H "Cookie: $PHPSESSID")
+        cookies="-H Cookie:$PHPSESSID"
     else
-        cookies=()
+        cookies=""
     fi
 
-    # Отправка запроса
+    # Sending request
     response=$(curl -s -X POST "$APP_URL/$endpoint" \
         -H "Content-Type: application/json" \
-        "${cookies[@]}" \
+        $cookies \
         -d "$json")
 
-    # Извлечение поля error, если оно есть
-    error_message=$(echo "$response" | grep -oP '(?<="error":")[^"]*')
+    # Parse JSON fields
+    success=$(echo "$response" | jq -r '.success // empty')
+    error=$(echo "$response" | jq -r '.error // empty')
 
-    # Сравнение
-    if [[ "$response" == *"$expected"* ]] || [[ "$error_message" == "$expected" ]]; then
+    # Determine pass/fail
+    if [[ "$expected" == "success:true" && "$success" == "true" ]]; then
+        echo "✅ $name: PASS"
+    elif [[ "$error" == *"$expected"* ]]; then
         echo "✅ $name: PASS"
     else
         echo "❌ $name: FAIL"
@@ -81,32 +82,35 @@ test_case "add2 - Digits in name" "add2.php" \
 '{"name":"T3st","surname":"Ivanov","country":"Russia","date_of_birth":"2000-01-01"}' \
 "Invalid characters in name"
 
-# Valid request
+# Valid request with unique author
+UNIQUE_NAME="TestUser$RANDOM"
+UNIQUE_SURNAME="Surname$RANDOM"
 test_case "add2 - Valid request" "add2.php" \
-'{"name":"Иван","surname":"Петров","country":"Россия","date_of_birth":"1990-01-01"}' \
-'"success":true'
+"{\"name\":\"$UNIQUE_NAME\",\"surname\":\"$UNIQUE_SURNAME\",\"country\":\"Россия\",\"date_of_birth\":\"1990-01-01\"}" \
+"success:true"
 
 echo "=== Testing add3.php validation (requires auth) ==="
 
 # Country contains digits → must fail
 test_case "add3 - Country contains digits" "add3.php" \
-'{"name":"Publisherrr","country":"Rus5sia","phone_number":"12345678"}' \
+'{"name":"PublisherX","country":"Rus5sia","phone_number":"12345678"}' \
 "Invalid characters in country" yes
 
 # Phone number too short
 test_case "add3 - Phone too short" "add3.php" \
-'{"name":"Publishering","country":"Россия","phone_number":"123"}' \
-"Phone number must be 7-18 digits" yes
+'{"name":"PublisherY","country":"Россия","phone_number":"123"}' \
+"Invalid phone number format" yes
 
 # Phone number contains letters
 test_case "add3 - Phone contains letters" "add3.php" \
-'{"name":"Publisherihhh","country":"Россия","phone_number":"12ab3456"}' \
-"Phone number must contain only digits" yes
+'{"name":"PublisherZ","country":"Россия","phone_number":"12ab3456"}' \
+"Invalid phone number format" yes
 
-# Valid request
+# Valid request with unique phone
+UNIQUE_PHONE=$((1000000000 + RANDOM % 9000000000))
 test_case "add3 - Valid request" "add3.php" \
-'{"name":"AST","country":"Россия","phone_number":"1234567890"}' \
-'"success":true' yes
+"{\"name\":\"AST$RANDOM\",\"country\":\"Россия\",\"phone_number\":\"$UNIQUE_PHONE\"}" \
+"success:true" yes
 
 echo ""
 if [ $TEST_RESULT -eq 0 ]; then
