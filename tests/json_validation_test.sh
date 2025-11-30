@@ -32,14 +32,14 @@ test_case() {
     local require_auth="$5"
 
     if [ "$require_auth" = "yes" ]; then
-        cookies="-H Cookie:$PHPSESSID"
+        cookies=(-H "Cookie:$PHPSESSID")
     else
         cookies=()
     fi
 
     response=$(curl -s -X POST "$APP_URL/$endpoint" \
         -H "Content-Type: application/json" \
-        "${cookies[@]" \
+        "${cookies[@]}" \
         -d "$json")
 
     # Try to extract success and error fields using grep/sed
@@ -73,7 +73,7 @@ test_case "add2 - Missing surname" "add2.php" \
 
 # Invalid JSON
 test_case "add2 - Invalid JSON" "add2.php" \
-'{"success":false,"error":"Missing required field:name"}' \
+'{"invalid": json}' \
 "Invalid JSON"
 
 # Name contains digits → should fail
@@ -93,7 +93,7 @@ echo "=== Testing add3.php validation (requires auth) ==="
 # Country contains digits → must fail
 test_case "add3 - Country contains digits" "add3.php" \
 '{"name":"PublisherX","country":"Rus5sia","phone_number":"12345678"}' \
-"{"success":false,"error":"Invalid characters in country"} yes
+"Invalid characters in country" yes
 
 # Phone number too short
 test_case "add3 - Phone too short" "add3.php" \
