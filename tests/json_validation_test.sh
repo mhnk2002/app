@@ -73,19 +73,17 @@ test_case "add2 - Missing surname" "add2.php" \
 
 # Invalid JSON
 test_case "add2 - Invalid JSON" "add2.php" \
-'{"invalid": json}' \
+'{invalid json}' \
 "Invalid JSON"
 
 # Name contains digits → should fail
 test_case "add2 - Digits in name" "add2.php" \
 '{"name":"T3st","surname":"Stolyarov","country":"Russia","date_of_birth":"2000-01-01"}' \
-"Invalid characters in name"
+"Invalid characters in name'{"name":"T3st","surname":"Stolyarov","country":"Russia","date_of_birth":"2000-01-01"}' \
 
-# Valid request with unique author
-UNIQUE_NAME="TestUser$RANDOM"
-UNIQUE_SURNAME="Surname$RANDOM"
+# Valid request
 test_case "add2 - Valid request" "add2.php" \
-"{\"name\":\"$UNIQUE_NAME\",\"surname\":\"$UNIQUE_SURNAME\",\"country\":\"Россия\",\"date_of_birth\":\"1990-01-01\"}" \
+'{"name":"Bogden","surname":"Stolyarov","country":"Russia","date_of_birth":"2004-01-01"}' \
 "success:true"
 
 echo "=== Testing add3.php validation (requires auth) ==="
