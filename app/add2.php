@@ -11,6 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Получаем JSON
 $data = json_decode(file_get_contents("php://input"), true);
 
+if ($data === null) {
+    echo json_encode(['success' => false, 'error' => 'Invalid JSON']);
+    exit;
+}
+
 // Проверяем, что пришли все обязательные поля
 $required = ['name', 'surname', 'country', 'date_of_birth'];
 foreach ($required as $field) {
