@@ -1,13 +1,13 @@
 #!/bin/bash
 
-echo "🔍 Starting JSON validation tests..."
+echo "Starting JSON validation tests..."
 APP_URL="http://192.168.0.1:8080"
 TEST_RESULT=0
 
 # -----------------------------
 # LOGIN AND OBTAIN REAL COOKIE
 # -----------------------------
-echo "🔐 Logging into system to obtain PHPSESSID..."
+echo "Logging into system to obtain PHPSESSID..."
 
 LOGIN_RESPONSE=$(curl -i -s -X POST "$APP_URL/login.php" \
      -d "username=admin&password=1")
@@ -86,7 +86,7 @@ test_case "add2 - Valid request" "add2.php" \
 '{"name":"Bogden","surname":"Stolyarov","country":"Russia","date_of_birth":"2004-01-01"}' \
 "success:true"
 
-echo "=== Testing add3.php validation (requires auth) ==="
+echo "=== Testing add3.php validation ==="
 
 # Country contains digits → must fail
 test_case "add3 - Country contains digits" "add3.php" \
