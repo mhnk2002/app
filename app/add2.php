@@ -14,6 +14,8 @@ $raw = file_get_contents("php://input");
 // Если тело пустое то JSON нет
 if (trim($raw) === "") {
     echo json_encode(['success' => false, 'error' => 'No JSON received']);
+    exit;
+}
 
 // Декодируем JSON
 $data = json_decode($raw, true);
