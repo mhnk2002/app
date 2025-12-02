@@ -21,6 +21,7 @@ if (trim($raw) === "") {
 $data = json_decode($raw, true);
 
 if ($data === null) {
+    echo "BROKEN JSON";
     echo json_encode(['success' => false, 'error' => 'Invalid JSON']);
     exit;
 }
