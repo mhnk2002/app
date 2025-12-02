@@ -71,6 +71,12 @@ test_case "add2 - Missing surname" "add2.php" \
 '{"name":"Test","country":"Russia","date_of_birth":"1990-01-01"}' \
 "Missing required field: surname"
 
+# No JSON sent
+test_case "add2 - No JSON" "add2.php" \
+"" \
+"No JSON received"
+
+
 # Invalid JSON
 test_case "add2 - Invalid JSON" "add2.php" \
 '{"name":"Test",' \

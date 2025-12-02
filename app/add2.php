@@ -8,8 +8,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Получаем JSON
-$data = json_decode(file_get_contents("php://input"), true);
+// Получаем сырое тело запроса
+$raw = file_get_contents("php://input");
+
+// Если тело пустое то JSON нет
+if (trim($raw) === "") {
+    echo json_encode(['success' => false, 'error' => 'No JSON received']);
+
+// Декодируем JSON
+$data = json_decode($raw, true);
 
 if ($data === null) {
     echo json_encode(['success' => false, 'error' => 'Invalid JSON']);
