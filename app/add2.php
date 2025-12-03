@@ -20,9 +20,9 @@ if (trim($raw) === "") {
 // Декодируем JSON
 $data = json_decode($raw, true);
 
+//Ошибка в коде Broken json
 if ($data === null) {
-    echo "BROKEN JSON";
-    echo json_encode(['success' => false, 'error' => 'Invalid JSON']);
+    echo json_encode(['success' => false, 'error' => 'BROKEN JSON']);
     exit;
 }
 
