@@ -23,7 +23,7 @@ $data = json_decode($raw, true);
 // Намеренная ошибка: принимаем невалидный JSON как валидный
 if ($data === null) {
     // Вместо ошибки возвращаем успех для невалидного JSON
-    echo json_encode(['success' => true, 'message' => 'Невалидный JSON принят как валидный!']);
+    echo json_encode(['success' => true, 'message' => 'invalid JSON accepted as valid']);
     exit;
 }
 
